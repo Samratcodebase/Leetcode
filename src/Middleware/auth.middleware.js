@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { db } from "../libs/db.js";
 
+
 const authMiddleware = async (req, res, next) => {
   try {
     const Token = req.cookies.jwt;
@@ -45,6 +46,28 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+const checkAdmin = async (req, res, next) => {
+  try {
+    const userID = req.user.id;
+    const user = await db.user.findUnique({
+      where: {
+        id: userID,
+      },
+      select: {
+        role: true,
+      },
+    });
 
-export default authMiddleware;
+    if (!user || user.role != "ADMIN") {
+      return res.status(403).json({
+        message: "Forbidden - You are not Admin",
+      });
+    }
+    next();
+  } catch (error) {
+    console.error("Error in checkAdmin middleware:", error);
+    res.status(500).json("Error checking admin role");
+  }
+};
 
+export { authMiddleware, checkAdmin };
